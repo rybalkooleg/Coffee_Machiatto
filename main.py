@@ -1,15 +1,17 @@
 from PyQt5 import QtWidgets, QtCore, QtGui, uic
+from design import *
+from addEditCoffeeForm import *
 import sqlite3
 
 
-db = sqlite3.connect("coffee.sqlite")
+db = sqlite3.connect("data/coffee.sqlite")
 cur = db.cursor()
 
 
-class Main(QtWidgets.QMainWindow):
+class Main(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None, flags=QtCore.Qt.WindowFlags()):
         super().__init__(parent=parent, flags=flags)
-        uic.loadUi("main.ui", self)
+        self.setupUi(self)
 
         res = list(cur.execute("SELECT * FROM coffee ORDER BY id DESC"))
         self.tableWidget.setRowCount(len(res))
@@ -29,10 +31,10 @@ class Main(QtWidgets.QMainWindow):
         w = EditAndAddCoffee(self)
         w.show()
 
-class EditAndAddCoffee(QtWidgets.QMainWindow):
+class EditAndAddCoffee(QtWidgets.QMainWindow, Ui_EditAndAddCoffee):
     def __init__(self, parent=None, flags=QtCore.Qt.WindowFlags()):
         super().__init__(parent=parent, flags=flags)
-        uic.loadUi("addEditCoffeeForm.ui", self)
+        self.setupUi(self)
 
         self.add_button.clicked.connect(self.add_coffee)
         res = list(cur.execute("SELECT * FROM coffee ORDER BY id DESC"))
@@ -51,23 +53,23 @@ class EditAndAddCoffee(QtWidgets.QMainWindow):
             self.character_line.text() != "" and\
             self.taste_line.text() != "" and\
             self.price_line.text() != "" and\
-            self.vol_line.text() != "":
+            self.val_line.text() != "":
             cur.execute("""INSERT INTO coffee (type_name, roast_degree, character, taste, price, vol)
                         VALUES (?, ?, ?, ?, ?, ?)""", (self.type_name_line.text(),
                                                         self.roast_degree_line.text(),
                                                         self.character_line.text(),
                                                         self.taste_line.text(),
                                                         self.price_line.text(),
-                                                        self.vol_line.text()))
+                                                        self.val_line.text()))
             db.commit()
     
     def update_data(self, row, col):
         id_ = self.tableWidget.item(row, 0).text()
         changed_attr = self.attributes[col]
         new_text = self.tableWidget.item(row, col).text()
-        print(changed_attr, new_text)
-        cur.execute(f"UPDATE coffee SET {changed_attr} = ? WHERE id = ?", (new_text, id_))
-        db.commit()
+        if new_text != "":
+            cur.execute(f"UPDATE coffee SET {changed_attr} = ? WHERE id = ?", (new_text, id_))
+            db.commit()
 
     
 if __name__ == "__main__":
